@@ -1,5 +1,6 @@
 import {anvil, liskSepolia, mainnet, monadTestnet} from 'viem/chains'
-import {createPublicClient, http} from "viem";
+import {createPublicClient, createWalletClient, Hex, http, publicActions} from "viem";
+import {privateKeyToAccount} from "viem/accounts";
 
 export type KeyRegisteredChain = keyof typeof registeredChain;
 
@@ -40,4 +41,26 @@ export function getPublicClient(props: {
         chain: chainObj,
         transport: http(rpcUrl)
     })
+}
+
+export function getWalletClient(props: {
+    privateKey: Hex,
+    chain: KeyRegisteredChain
+}) {
+
+    const chainObj = registeredChain[props.chain];
+    const rpcUrl = registeredChainRpc[props.chain];
+
+    console.log("Invoke getPublicClient()", {
+        chain: props.chain,
+        rpcUrl
+    })
+
+    const account = privateKeyToAccount(props.privateKey);
+
+    return createWalletClient({
+        account,
+        chain: chainObj,
+        transport: http(rpcUrl)
+    }).extend(publicActions)
 }

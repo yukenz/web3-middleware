@@ -3,6 +3,8 @@ import type {NextApiResponse} from "next";
 
 export function handleError(err: any, res: NextApiResponse<any>) {
 
+    console.log("Got handleError()",err)
+
     if (err instanceof z.ZodError) {
         res.setHeader('Content-Type', 'application/json')
         res.status(505).json({
