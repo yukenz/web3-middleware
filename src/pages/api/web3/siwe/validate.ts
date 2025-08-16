@@ -7,11 +7,6 @@ import {Hex} from "viem";
 import {parseSiweMessage, validateSiweMessage} from 'viem/siwe'
 
 
-const HexAddress = z.string().refine(
-    (val) => val.startsWith("0x"),
-    {message: "Must start with 0x"}
-);
-
 const SIWEVerificationRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
     message: z.string(),

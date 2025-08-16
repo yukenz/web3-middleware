@@ -4,15 +4,12 @@ import * as z from "zod";
 import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
 import {erc20Abi} from "@/abi/erc20";
 import {jsonToString} from "@/lib/utils";
+import {hexString} from "@/lib/zod";
 
-const HexAddress = z.string().refine(
-    (val) => val.startsWith("0x"),
-    {message: "Must start with 0x"}
-);
 
 const ERC20TotalSupplyRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    erc20Address: HexAddress,
+    erc20Address: hexString(),
 });
 
 async function postProcessor(

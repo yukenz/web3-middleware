@@ -4,27 +4,13 @@ import * as z from "zod";
 import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
 import {jsonToString} from "@/lib/utils";
 import {Hex} from "viem";
+import {stringBigInt, hexString} from "@/lib/zod";
 
-
-const HexAddress = z.string().refine(
-    (val) => val.startsWith("0x"),
-    {message: "Must start with 0x"}
-);
 
 const EthTransferRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    destinationAddress: HexAddress,
-    amount: z.string().refine(
-        (val) => {
-            try {
-                BigInt(val);
-                return true
-            } catch (err) {
-                return false
-            }
-        },
-        {message: "Invalid BigInt"}
-    ),
+    destinationAddress: hexString(),
+    amount: stringBigInt(),
 });
 
 const sampleReq = {

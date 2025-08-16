@@ -5,16 +5,13 @@ import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error
 import {jsonToString} from "@/lib/utils";
 import {privateKeyToAccount} from "viem/accounts";
 import type {Hex} from "viem";
+import {parseSiweMessage} from "viem/siwe";
+import {hexString} from "@/lib/zod";
 
-
-const HexAddress = z.string().refine(
-    (val) => val.startsWith("0x"),
-    {message: "Must start with 0x"}
-);
 
 const SIWESignRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    yourPrivateKey: HexAddress,
+    yourPrivateKey: hexString(),
     message: z.string()
 });
 
@@ -33,6 +30,11 @@ async function postProcessor(
 
         const request = SIWESignRequest.parse(req.body);
         const account = privateKeyToAccount(request.yourPrivateKey as Hex);
+        const siweMessage = parseSiweMessage(request.message);
+
+        if (siweMessage.address !== account.address) {
+            throw new Error("SIWE Address doesn't match with private key address");
+        }
 
         const signature = await account.signMessage({
             message: request.message

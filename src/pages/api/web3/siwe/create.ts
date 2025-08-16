@@ -4,16 +4,13 @@ import * as z from "zod";
 import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
 import {jsonToString} from "@/lib/utils";
 import {createSiweMessage, generateSiweNonce} from 'viem/siwe'
+import {hexString} from "@/lib/zod";
 
 
-const HexAddress = z.string().refine(
-    (val) => val.startsWith("0x"),
-    {message: "Must start with 0x"}
-);
 
 const SIWECreateRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    yourAddress: HexAddress,
+    yourAddress: hexString(),
 });
 
 const sampleReq: z.infer<typeof SIWECreateRequest> = {
@@ -42,7 +39,7 @@ async function postProcessor(
 
     if (req.method === 'POST') {
         res.setHeader('Content-Type', 'application/json')
-        res.status(200).send(jsonToString({message, nonce}));
+        res.status(200).send(jsonToString({message}));
     } else {
         handleBadRequest("Use POST only", res)
     }
