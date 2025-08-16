@@ -1,9 +1,9 @@
 import type {NextApiRequest, NextApiResponse} from "next";
-import {KeyRegisteredChain, registeredChain} from "@/lib/viem";
+import {getWalletClient, KeyRegisteredChain, registeredChain} from "@/lib/viem";
 import * as z from "zod";
 import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
 import {jsonToString} from "@/lib/utils";
-import {createSiweMessage, generateSiweNonce} from 'viem/siwe'
+import {Hex} from "viem";
 
 
 const HexAddress = z.string().refine(
@@ -11,15 +11,26 @@ const HexAddress = z.string().refine(
     {message: "Must start with 0x"}
 );
 
-const SIWECreateRequest = z.object({
+const EthTransferRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    yourAddress: HexAddress,
+    destinationAddress: HexAddress,
+    amount: z.string().refine(
+        (val) => {
+            try {
+                BigInt(val);
+                return true
+            } catch (err) {
+                return false
+            }
+        },
+        {message: "Invalid BigInt"}
+    ),
 });
 
-const sampleReq: z.infer<typeof SIWECreateRequest> = {
+const sampleReq = {
     "chain": "monadTestnet",
-    "yourAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-
+    "destinationAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "amount": "1000"
 }
 
 async function postProcessor(
@@ -27,25 +38,27 @@ async function postProcessor(
     res: NextApiResponse<{}>,
 ) {
 
-    const request = SIWECreateRequest.parse(req.body);
-    const nonce = generateSiweNonce()
+    const request = EthTransferRequest.parse(req.body);
 
-    const message = createSiweMessage({
-        address: request.yourAddress as `0x${string}`,
-        chainId: registeredChain[request.chain].id,
-        domain: 'aone.my.id',
-        nonce,
-        uri: 'https://aone.my.id/auth',
-        version: '1',
-    })
+    const masterWallet = getWalletClient({
+        chain: request.chain,
+        privateKey: process.env.MASTER_PRIVATE_KEY as Hex
+    });
+
+    const trxReceipt = await masterWallet.sendTransaction({
+        account: masterWallet.account,
+        to: request.destinationAddress as Hex,
+        value: BigInt(request.amount)
+    });
 
 
     if (req.method === 'POST') {
         res.setHeader('Content-Type', 'application/json')
-        res.status(200).send(jsonToString({message, nonce}));
+        res.status(200).send(jsonToString({trxReceipt}));
     } else {
         handleBadRequest("Use POST only", res)
     }
+
 }
 
 export default async function handler(
