@@ -22,7 +22,6 @@ async function postProcessor(
     res: NextApiResponse<{}>,
 ) {
 
-
     const {
         erc20Address,
         destinationAddress,

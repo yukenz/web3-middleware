@@ -32,9 +32,7 @@ async function postProcessor(
         amount
     } = ERC20TransferFromRequest.parse(req.body);
 
-
     const walletClient = getWalletClient({chain, privateKey: privateKey as Hex});
-
 
     const {result: simulationResult, request} = await walletClient.simulateContract({
         address: erc20Address as Hex,

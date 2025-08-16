@@ -12,10 +12,10 @@ export const registeredChain = {
 };
 
 export const registeredChainRpc: { [K in KeyRegisteredChain]: string } = {
-    anvil: anvil.rpcUrls.default.http[0],
-    mainnet: process.env.CHAIN_RPC_MAINNET as string,
-    monadTestnet: process.env.CHAIN_RPC_MONADTESTNET as string,
-    liskSepolia: liskSepolia.rpcUrls.default.http[0]
+    anvil: process.env.CHAIN_RPC_ANVIL as string ?? anvil.rpcUrls.default.http[0],
+    mainnet: process.env.CHAIN_RPC_MAINNET as string ?? mainnet.rpcUrls.default.http[0],
+    monadTestnet: process.env.CHAIN_RPC_MONADTESTNET as string ?? monadTestnet.rpcUrls.default.http[0],
+    liskSepolia: process.env.CHAIN_RPC_LISKSEPOLIA ?? liskSepolia.rpcUrls.default.http[0]
 };
 
 export const registeredWalleEip712Address: { [K in KeyRegisteredChain]: `0x${string}` } = {

@@ -1,7 +1,11 @@
 import * as z from "zod";
 import type {NextApiResponse} from "next";
 
-
+/**
+ * ====================================
+ * API LEVEL
+ * ====================================
+ * */
 export function handleError(err: any, res: NextApiResponse<any>) {
 
     console.log("Got handleError()", err)
@@ -33,4 +37,19 @@ export function handleBadRequest(errorDetail: string, res: NextApiResponse<any>)
 export function handleMethodNotAllowed(currentMethod: string | undefined, value: string[], res: NextApiResponse<any>) {
     res.setHeader("Allow", value);
     res.status(405).end(`Method ${currentMethod} Not Allowed`);
+}
+
+/**
+ * ====================================
+ * MIDDLEWARE LEVEL
+ * ====================================
+ * */
+export function middlewareHandleUnauthorized(errorDetail: string) {
+    return Response.json(
+        {
+            error: "03",
+            errorDetail
+        },
+        {status: 401}
+    )
 }
