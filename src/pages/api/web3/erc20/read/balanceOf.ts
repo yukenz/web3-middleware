@@ -1,10 +1,11 @@
 import type {NextApiRequest, NextApiResponse} from "next";
 import {getPublicClient, KeyRegisteredChain, registeredChain} from "@/lib/viem";
 import * as z from "zod";
-import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
+import {handleError, handleMethodNotAllowed} from "@/lib/error";
 import {erc20Abi} from "@/abi/erc20";
 import {jsonToString} from "@/lib/utils";
 import {hexString} from "@/lib/zod";
+import {Hex} from "viem";
 
 
 const ERC20BalanceOfRequest = z.object({
@@ -19,7 +20,6 @@ async function postProcessor(
     res: NextApiResponse<{}>,
 ) {
 
-
     const {
         erc20Address,
         walletAddress,
@@ -29,20 +29,15 @@ async function postProcessor(
     const publicClient = getPublicClient({chain});
 
     const data = await publicClient.readContract({
-        address: erc20Address as `0x${string}`,
+        address: erc20Address as Hex,
         abi: erc20Abi,
         functionName: 'balanceOf',
         args: [
-            walletAddress as `0x${string}`
+            walletAddress as Hex
         ],
     })
-
-    if (req.method === 'POST') {
-        res.setHeader('Content-Type', 'application/json')
-        res.status(200).send(jsonToString({data}));
-    } else {
-        handleBadRequest("Use POST only", res)
-    }
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).send(jsonToString({data}));
 }
 
 export default async function handler(

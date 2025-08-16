@@ -3,7 +3,7 @@ import {getWalletClient, KeyRegisteredChain, registeredChain} from "@/lib/viem";
 import * as z from "zod";
 import {handleError, handleMethodNotAllowed} from "@/lib/error";
 import {erc20Abi} from "@/abi/erc20";
-import {formatEther, Hex} from "viem";
+import {Hex} from "viem";
 import {hexString, stringBigInt} from "@/lib/zod";
 import {jsonToString} from "@/lib/utils";
 
@@ -34,20 +34,16 @@ async function postProcessor(
 
     const walletClient = getWalletClient({chain, privateKey: privateKey as Hex});
 
-    const {result: simulationResult, request} = await walletClient.simulateContract({
+    const {request} = await walletClient.simulateContract({
         address: erc20Address as Hex,
         abi: erc20Abi,
         functionName: 'transferFrom',
         args: [sourceAddress as Hex, destinationAddress as Hex, BigInt(amount)]
     })
 
-    const gas = await walletClient.estimateContractGas(request);
-    const fees = await walletClient.estimateFeesPerGas({type: 'eip1559',})
-    const estWei = gas * (fees.maxFeePerGas ?? fees.gasPrice!)
-    const consumedEther = formatEther(estWei, 'wei');
-
+    const trxReceipt = await walletClient.writeContract(request);
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(jsonToString({simulationResult, gas, consumedEther}));
+    res.status(200).send(jsonToString({trxReceipt}));
 }
 
 export default async function handler(

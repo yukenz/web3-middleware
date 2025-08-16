@@ -3,7 +3,7 @@ import {getWalletClient, KeyRegisteredChain, registeredChain} from "@/lib/viem";
 import * as z from "zod";
 import {handleError, handleMethodNotAllowed} from "@/lib/error";
 import {erc20Abi} from "@/abi/erc20";
-import {Hex} from "viem";
+import {formatEther, Hex} from "viem";
 import {hexString, stringBigInt} from "@/lib/zod";
 import {jsonToString} from "@/lib/utils";
 
@@ -22,7 +22,6 @@ async function postProcessor(
     res: NextApiResponse<{}>,
 ) {
 
-
     const {
         erc20Address,
         destinationAddress,
@@ -40,9 +39,14 @@ async function postProcessor(
         args: [destinationAddress as Hex, BigInt(amount)]
     })
 
-    const trxReceipt = await walletClient.writeContract(request);
+    const gas = await walletClient.estimateContractGas(request);
+    const fees = await walletClient.estimateFeesPerGas({type: 'eip1559'})
+    const estimateWei = gas * (fees.maxFeePerGas ?? fees.gasPrice!)
+    const estimateEther = formatEther(estimateWei, 'wei');
+
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(jsonToString({trxReceipt}));
+    res.status(200).send(jsonToString({gas, fees, estimateWei, estimateEther}));
+
 }
 
 export default async function handler(

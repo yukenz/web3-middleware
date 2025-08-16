@@ -33,17 +33,16 @@ async function postProcessor(
 
     const walletClient = getWalletClient({chain, privateKey: privateKey as Hex});
 
-
-    const trxHash = await walletClient.writeContract({
+    const {request} = await walletClient.simulateContract({
         address: erc20Address as Hex,
         abi: erc20Abi,
         functionName: 'approve',
         args: [destinationAddress as Hex, BigInt(amount)]
     })
 
+    const trxReceipt = await walletClient.writeContract(request);
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(jsonToString({trxHash}));
-
+    res.status(200).send(jsonToString({trxReceipt}));
 }
 
 export default async function handler(
