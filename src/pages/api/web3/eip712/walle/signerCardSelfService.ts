@@ -36,7 +36,7 @@ async function postProcessor(
     const publicClient = getPublicClient({chain: request.chain});
     const domain = buildDomain(request.chain)
 
-    const recoveredAddress = await publicClient.readContract({
+    const data = await publicClient.readContract({
         address: domain.verifyingContract,
         abi: eip712abi,
         functionName: 'getSignerCardSelfService',
@@ -49,7 +49,7 @@ async function postProcessor(
     })
 
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(jsonToString({recoveredAddress}));
+    res.status(200).send(jsonToString({data}));
 }
 
 export default async function handler(
