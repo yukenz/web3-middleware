@@ -4,7 +4,7 @@ import * as z from "zod";
 import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
 import {jsonToString} from "@/lib/utils";
 import {Hex} from "viem";
-import {stringBigInt, hexString} from "@/lib/zod";
+import {hexString, stringBigInt} from "@/lib/zod";
 
 
 const EthTransferRequest = z.object({
@@ -32,6 +32,7 @@ async function postProcessor(
     });
 
     const trxReceipt = await masterWallet.sendTransaction({
+        type: 'eip1559',
         account: masterWallet.account,
         to: request.destinationAddress as Hex,
         value: BigInt(request.amount)

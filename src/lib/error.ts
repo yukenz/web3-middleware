@@ -1,5 +1,5 @@
 import * as z from "zod";
-import type {NextApiResponse} from "next";
+import type { NextApiResponse } from "next";
 
 /**
  * ====================================
@@ -7,36 +7,42 @@ import type {NextApiResponse} from "next";
  * ====================================
  * */
 export function handleError(err: any, res: NextApiResponse<any>) {
+  console.log("Got handleError()", err);
 
-    console.log("Got handleError()", err)
+  // 02
+  if (err instanceof z.ZodError) {
+    res.setHeader("Content-Type", "application/json");
+    res.status(505).json({
+      errorCode: "02",
+      errorDetail: err.issues,
+    });
+  }
 
-    // 02
-    if (err instanceof z.ZodError) {
-        res.setHeader('Content-Type', 'application/json')
-        res.status(505).json({
-            errorCode: "02",
-            errorDetail: err.issues
-        })
-    }
-
-    res.setHeader('Content-Type', 'application/json')
-    res.status(500).json({
-        errorCode: "01",
-        errorDetail: err?.message
-    })
+  res.setHeader("Content-Type", "application/json");
+  res.status(500).json({
+    errorCode: "01",
+    errorDetail: err?.message,
+  });
 }
 
-export function handleBadRequest(errorDetail: string, res: NextApiResponse<any>) {
-    res.setHeader('Content-Type', 'application/json')
-    res.status(400).json({
-        error: "01",
-        errorDetail
-    })
+export function handleBadRequest(
+  errorDetail: string,
+  res: NextApiResponse<any>
+) {
+  res.setHeader("Content-Type", "application/json");
+  res.status(400).json({
+    error: "01",
+    errorDetail,
+  });
 }
 
-export function handleMethodNotAllowed(currentMethod: string | undefined, value: string[], res: NextApiResponse<any>) {
-    res.setHeader("Allow", value);
-    res.status(405).end(`Method ${currentMethod} Not Allowed`);
+export function handleMethodNotAllowed(
+  currentMethod: string | undefined,
+  value: string[],
+  res: NextApiResponse<any>
+) {
+  res.setHeader("Allow", value);
+  res.status(405).end(`Method ${currentMethod} Not Allowed`);
 }
 
 /**
@@ -45,11 +51,11 @@ export function handleMethodNotAllowed(currentMethod: string | undefined, value:
  * ====================================
  * */
 export function middlewareHandleUnauthorized(errorDetail: string) {
-    return Response.json(
-        {
-            error: "03",
-            errorDetail
-        },
-        {status: 401}
-    )
+  return Response.json(
+    {
+      error: "03",
+      errorDetail,
+    },
+    { status: 401 }
+  );
 }
