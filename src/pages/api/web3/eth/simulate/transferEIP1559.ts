@@ -1,7 +1,7 @@
 import type {NextApiRequest, NextApiResponse} from "next";
 import {getWalletClient, KeyRegisteredChain, registeredChain} from "@/lib/viem";
 import * as z from "zod";
-import {handleBadRequest, handleError, handleMethodNotAllowed} from "@/lib/error";
+import {handleError, handleMethodNotAllowed} from "@/lib/error";
 import {jsonToString} from "@/lib/utils";
 import {Hex} from "viem";
 import {hexString, stringBigInt} from "@/lib/zod";
@@ -9,15 +9,11 @@ import {hexString, stringBigInt} from "@/lib/zod";
 
 const EthTransferRequest = z.object({
     chain: z.enum(Object.keys(registeredChain) as [KeyRegisteredChain]),
-    destinationAddress: hexString(),
+    privateKey: hexString(),
+    toAddress: hexString(),
     amount: stringBigInt(),
 });
 
-const sampleReq = {
-    "chain": "monadTestnet",
-    "destinationAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "amount": "1000"
-}
 
 async function postProcessor(
     req: NextApiRequest,
@@ -31,20 +27,34 @@ async function postProcessor(
         privateKey: process.env.MASTER_PRIVATE_KEY as Hex
     });
 
-    const trxReceipt = await masterWallet.sendTransaction({
-        type: 'eip1559',
+    const estimateGas = await masterWallet.estimateGas({
         account: masterWallet.account,
-        to: request.destinationAddress as Hex,
+        to: request.toAddress as Hex,
         value: BigInt(request.amount)
-    });
+    })
 
+    const gasPrice = await masterWallet.getGasPrice()
+    const feesPerGas = await masterWallet.estimateFeesPerGas({
+        type: 'eip1559',
+    })
 
-    if (req.method === 'POST') {
-        res.setHeader('Content-Type', 'application/json')
-        res.status(200).send(jsonToString({trxReceipt}));
-    } else {
-        handleBadRequest("Use POST only", res)
-    }
+    const maxPriorityFeePerGas = await masterWallet.estimateMaxPriorityFeePerGas()
+    const baseFee = await masterWallet.getBlobBaseFee()
+    const feeHistory = await masterWallet.getFeeHistory({
+        blockCount: 4,
+        rewardPercentiles: [25, 75]
+    })
+
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).send(jsonToString({
+        estimateGas,
+        gasPrice,
+        feesPerGas,
+        maxPriorityFeePerGas,
+        baseFee,
+        feeHistory,
+        gasFee: estimateGas * gasPrice
+    }));
 
 }
 
